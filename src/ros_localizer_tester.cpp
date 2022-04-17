@@ -1,4 +1,4 @@
-#include <carplanner_msgs/ros_localizer_tester.h>
+#include <carplanner_tools/ros_localizer_tester.h>
 
 Tester::Tester(ros::NodeHandle& nh_, ros::NodeHandle& pnh_) : nh(nh_), pnh(pnh_) {
   pnh.param("parent_frame_id", parent_frame_id, std::string("map"));
@@ -39,7 +39,7 @@ void Tester::loopFunc(const ros::TimerEvent& event)
 
     tfcaster.sendTransform(T);
 
-    ROS_INFO("Sent transform: %f %f %f %f %f %f %f", T.transform.translation.x, T.transform.translation.y, T.transform.translation.z, T.transform.rotation.x, T.transform.rotation.y, T.transform.rotation.z, T.transform.rotation.w);
+    ROS_INFO("Sent transform: %s->%s %f %f %f %f %f %f %f", parent_frame_id.c_str(), child_frame_id.c_str(), T.transform.translation.x, T.transform.translation.y, T.transform.translation.z, T.transform.rotation.x, T.transform.rotation.y, T.transform.rotation.z, T.transform.rotation.w);
 }
 
 int main( int argc, char* argv[] )
