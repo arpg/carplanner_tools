@@ -75,7 +75,7 @@ public:
         CacheMap::iterator existing_element = cache_.find(time);
         if (existing_element!=cache_.end())
         {
-            vel = std::get<2>(existing_element);
+            vel = std::get<2>(existing_element->second);
             return ABORTED;
         }
 
