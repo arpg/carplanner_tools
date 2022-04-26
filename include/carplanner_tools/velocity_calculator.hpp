@@ -114,10 +114,10 @@ private:
 
     inline CalculateVelocityStatus PopulateInstantaneousVelocity()
     {
-        auto last_pair_ptr = ++cache_.rbegin();
+        auto last_pair_ptr = GetNewestPair(1);
         Time last_time = last_pair_ptr->first;
 
-        auto new_pair_ptr = cache_.rbegin();
+        auto new_pair_ptr = GetNewestPair();
         Time new_time = new_pair_ptr->first;
 
         Time dt = new_time - last_time;
@@ -164,7 +164,7 @@ private:
 
     inline CalculateVelocityStatus PopulateAveragedVelocity()
     {
-        auto new_pair_ptr = cache_.rbegin();
+        auto new_pair_ptr = GetNewestPair();
         Time new_time = new_pair_ptr->first;
         CacheElement& new_element = new_pair_ptr->second;
         Position new_pos = std::get<0>(new_element);
@@ -221,7 +221,7 @@ private:
 
     inline CalculateVelocityStatus PopulateFilteredVelocity()
     {
-        auto new_pair_ptr = cache_.rbegin();
+        auto new_pair_ptr = GetNewestPair();
         Time new_time = new_pair_ptr->first;
         CacheElement& new_element = new_pair_ptr->second;
 
@@ -229,7 +229,7 @@ private:
 
         if (vel_in_chassis_frame_)
         {
-            auto last_pair_ptr = ++cache_.rbegin();
+            auto last_pair_ptr = GetNewestPair(1);
             Time last_time = last_pair_ptr->first;
             CacheElement last_element = last_pair_ptr->second;
 
@@ -266,6 +266,9 @@ private:
     }
 
 public:
+    inline CachePair* GetNewestPair(int dist_from_end=0) { return &*(std::next(cache_.rbegin(),dist_from_end)); }
+    inline CachePair* GetOldestPair(int dist_from_start=0) { return &*(std::next(cache_.begin(),dist_from_start)); }
+
     inline const CachePair* GetPair(Time time=DBL_MAX)
     {
         const CachePair* pair_ptr;
@@ -273,7 +276,7 @@ public:
         if (time==DBL_MAX)
         {
             // if time is max, get last element
-            pair_ptr = &*(cache_.rbegin());
+            pair_ptr = GetNewestPair();
         }
         else
         {
@@ -345,7 +348,7 @@ public:
             return ABORTED;
         }
 
-        auto last_pair_ptr = cache_.rbegin();
+        auto last_pair_ptr = GetNewestPair();
         Time last_time = last_pair_ptr->first;
         Time dt = time - last_time;
 
@@ -375,7 +378,7 @@ public:
         if (status!=SUCCESS)
             return status;
         
-        vel = std::get<4>(cache_.rbegin()->second);
+        vel = std::get<4>(GetNewestPair()->second);
 
         // std::cout << "VelocityCalculator succeeded." << std::endl;
         Print(cache_);
