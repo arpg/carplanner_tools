@@ -182,3 +182,10 @@ add_executable( controlcommand2drivecommand
 target_link_libraries( controlcommand2drivecommand
   ${catkin_LIBRARIES}
 )
+
+add_executable( joy_goal_generator
+  src/joy_goal_generator.cpp
+)
+target_link_libraries( joy_goal_generator
+  ${catkin_LIBRARIES}
+)

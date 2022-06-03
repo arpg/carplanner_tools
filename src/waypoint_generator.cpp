@@ -1,11 +1,12 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <carplanner_msgs/OdometryArray.h>
+#include <carplanner_msgs/WayPoints.h>
 // #include <tf/transform_listener.h>
 #include <nav_msgs/Odometry.h>
 
 ros::Publisher pub;
-ros::Timer loop;
+bool loop;
+ros::Timer timer;
 std::string goal_topic, waypoints_topic;
 std::string odom_topic;
 // std::string map_frame, base_frame;
@@ -43,7 +44,7 @@ void odom_cb(const nav_msgs::Odometry::ConstPtr msg)
   odom = *msg;
 }
 
-void loopFunc(const ros::TimerEvent& event)
+void timerFunc(const ros::TimerEvent& event)
 {
     if (goal.header.seq==0) return;
     if (odom.header.seq==0) return;
@@ -97,6 +98,7 @@ void loopFunc(const ros::TimerEvent& event)
 
     // add start waypoint from odom
     {
+      // odom.twist.twist.linear.x = 1.;
       odom_arr.odoms.push_back(odom);
     }
 
@@ -125,8 +127,12 @@ void loopFunc(const ros::TimerEvent& event)
       odom_arr.odoms.push_back(odom_msg);
     }
 
+    carplanner_msgs::WayPoints wp_msg;
+    wp_msg.odom_arr = odom_arr;
+    wp_msg.loop = loop;
+
     // ROS_INFO("Publishing...");
-    pub.publish(odom_arr);
+    pub.publish(wp_msg);
     ros::spinOnce();
 }
 
@@ -142,13 +148,14 @@ int main( int argc, char* argv[] )
     // pnh.param("map_frame_id", map_frame, std::string("map"));
     // pnh.param("base_frame_id", base_frame, std::string("base_link"));
     pnh.param("rate", rate, (float)rate);
+    pnh.param("loop", loop, false);
 
     // ROS_INFO("Params:\n goal=%s\n waypoints=%s\n map_frame=%s\n base_link_frame=%s",std::string(goal_topic).c_str(),std::string(waypoints_topic).c_str(),std::string(map_frame).c_str(),std::string(base_frame).c_str());
 
     ros::Subscriber goal_sub = nh.subscribe<geometry_msgs::PoseStamped>(goal_topic, 5, goal_cb);
     ros::Subscriber odom_sub = nh.subscribe<nav_msgs::Odometry>(odom_topic, 5, odom_cb);
-    pub = nh.advertise<carplanner_msgs::OdometryArray>(waypoints_topic, 5);
-    loop = nh.createTimer(ros::Duration(1.0f/rate), loopFunc);
+    pub = nh.advertise<carplanner_msgs::WayPoints>(waypoints_topic, 5);
+    timer = nh.createTimer(ros::Duration(1.0f/rate), timerFunc);
 
     ROS_INFO("Initialized.");
 

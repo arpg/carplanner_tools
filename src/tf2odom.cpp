@@ -39,15 +39,17 @@ int main(int argc, char** argv){
   odom_msg.child_frame_id = child_frame;
   ros::Rate rate(rate_);
   while (node.ok()){
-    rate.sleep();
-    ros::spinOnce();
+    // ROS_INFO("Looping...");
     
     // look up pose from tf tree
     tf::StampedTransform transform;
     try{
       listener.lookupTransform(parent_frame.c_str(), child_frame.c_str(),
                                ros::Time(0), transform);
-      odom_msg.header.stamp = transform.stamp_;
+      ros::Time stamp = transform.stamp_;
+      if (stamp.toSec()==0.0)
+        stamp = ros::Time::now();
+      odom_msg.header.stamp = stamp;
       odom_msg.pose.pose.position.x = transform.getOrigin().x();
       odom_msg.pose.pose.position.y = transform.getOrigin().y();
       odom_msg.pose.pose.position.z = transform.getOrigin().z();
@@ -63,13 +65,19 @@ int main(int argc, char** argv){
     if (odom_msg_cache.size()<=0)
     {
       odom_msg_cache.push_back(odom_msg);
+      ROS_WARN("Added first odom to cache.");
       continue;
     }
 
     // if dt is negative, something is wrong. skip
     double dt = (odom_msg.header.stamp-odom_msg_cache[odom_msg_cache.size()-1].header.stamp).toSec();
     if (dt <= 0.f)
+    {
+      ROS_WARN_THROTTLE(1.0, "Nonpositive dt detected: %f", dt);
       continue;
+    }
+
+    // ROS_INFO("Estimating vel...");
 
     // estimate linear velocity via finite difference
     // if (odom_msg_cache.size() > 0)
@@ -125,13 +133,12 @@ int main(int argc, char** argv){
       avg_avel.z /= odom_msg_cache.size();
     } else {
       ROS_WARN_THROTTLE(5.f, "odom_msg_cache of size 0 detected");
+      continue;
     }
     odom_msg.twist.twist.linear = avg_vel;
     odom_msg.twist.twist.angular = avg_avel;
     
     robot_odom_pub.publish(odom_msg);
-
-
 /*
     point_msg.header.stamp = ros::Time::now();
     point_msg.point.x = odom_msg.pose.pose.position.x;
@@ -140,6 +147,8 @@ int main(int argc, char** argv){
 
     robot_point_pub.publish(point_msg);
 */
+    ros::spinOnce();
+    rate.sleep();
   }
   return 0;
 };

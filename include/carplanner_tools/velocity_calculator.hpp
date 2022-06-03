@@ -343,7 +343,7 @@ public:
         CacheMap::iterator existing_element = cache_.find(time);
         if (existing_element!=cache_.end())
         {
-            std::cout << "VelocityCalculator: Element at time " << time << " already exists." << std::endl;
+            // std::cout << "VelocityCalculator: Element at time " << time << " already exists." << std::endl;
             vel = std::get<3>(existing_element->second);
             return ABORTED;
         }
