@@ -81,6 +81,8 @@ inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& pa
         markarr_msg.markers[iPath].color.b = config.color_b;
         markarr_msg.markers[iPath].color.a = config.color_a;
 
+        markarr_msg.markers[iPath].pose.orientation.w = 1.f;
+
         markarr_msg.markers[iPath].points.resize(patharr_msg.paths[iPath].poses.size());
 
         if (markarr_msg.markers[iPath].points.size() > 0)
@@ -114,7 +116,7 @@ inline void convertSomePath2PathArrayMsg(std::list<std::vector<VehicleState> *>&
         path_msg.header.stamp = ros::Time::now();
         for(uint i_state=0; i_state < (*i_seg)->size(); i_state++)
         {
-            carplanner_msgs::VehicleState state_msg = (**i_seg)[i_state].toROS();
+            carplanner_msgs::VehicleState state_msg = (**i_seg)[i_state].FlipCoordFrame().toROS();
             geometry_msgs::PoseStamped pose_msg;
             pose_msg.header.frame_id = frame_id;
             pose_msg.header.stamp = ros::Time::now();
@@ -202,7 +204,7 @@ inline void convertSomePath2PathArrayMsg(std::vector<MotionSample>& path, carpla
         path_msg.header.stamp = ros::Time::now();
         for(uint i_state=0; i_state < it_seg->m_vStates.size(); i_state++)
         {
-            carplanner_msgs::VehicleState state_msg = it_seg->m_vStates[i_state].toROS();
+            carplanner_msgs::VehicleState state_msg = it_seg->m_vStates[i_state].FlipCoordFrame().toROS();
             geometry_msgs::PoseStamped pose_msg;
             pose_msg.header.frame_id = frame_id;
             pose_msg.header.stamp = ros::Time::now();

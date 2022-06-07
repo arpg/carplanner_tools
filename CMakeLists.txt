@@ -141,10 +141,10 @@ target_link_libraries( waypoint_generator
   ${catkin_LIBRARIES}
 )
 
-add_executable( goal_generator
-  src/goal_generator.cpp
+add_executable( path_goal_generator
+  src/path_goal_generator.cpp
 )
-target_link_libraries( goal_generator
+target_link_libraries( path_goal_generator
   ${catkin_LIBRARIES}
 )
 
@@ -183,7 +183,15 @@ target_link_libraries( controlcommand2drivecommand
   ${catkin_LIBRARIES}
 )
 
+add_executable( diff_goal_generator
+  src/diff_goal_generator.cpp
+)
+target_link_libraries( diff_goal_generator
+  ${catkin_LIBRARIES}
+)
+
 add_executable( joy_goal_generator
+  src/joy_goal_generator_node.cpp
   src/joy_goal_generator.cpp
 )
 target_link_libraries( joy_goal_generator

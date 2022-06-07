@@ -1,0 +1,40 @@
+axis_length: 1 
+scale_length: 1.0
+offset_length: 0.0
+scale_length_turbo: 1.0
+offset_length_turbo: 1.0
+
+axis_angle: 3 
+scale_angle: 0.7854
+offset_angle: 0.0
+scale_angle_turbo: 1.5708
+offset_angle_turbo: 0.0
+
+enable_button: 4  
+enable_turbo_button: 5 
+
+# BUTTONS
+# A button........ button 0
+# B button........ button 1
+# X button........ button 2
+# Y button........ button 3
+# left bumper..... button 4
+# right bumper.... button 5
+# select button... button 6
+# start button.... button 7
+# xbox button..... button 8
+# left stick...... button 9
+# right stick..... button 10
+# left D-pad...... button 11
+# right D-pad..... button 12
+# up D-pad........ button 13
+# down D-pad...... button 14
+# AXES
+# left stick horizontal.... axis 0
+# left stick vertical...... axis 1
+# left trigger............. axis 2
+# right stick horizontal... axis 3
+# right stick vertical..... axis 4
+# right trigger............ axis 5
+# D-pad horizontal......... axis 6
+# D-pad vertical........... axis 7

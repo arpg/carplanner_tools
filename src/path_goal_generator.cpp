@@ -26,7 +26,7 @@ void path_cb(const nav_msgs::Path::ConstPtr msg)
 
 int main( int argc, char* argv[] )
 {
-    ros::init(argc, argv, "goal_generator");
+    ros::init(argc, argv, "path_goal_generator");
 
     ros::NodeHandle nh, pnh("~");
 
