@@ -56,7 +56,7 @@ inline void convertPathArrayMsg2PathMsg(carplanner_msgs::PathArray& patharr_msg,
     (*path_msg_out) = path_msg;
 }
 
-inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& patharr_msg, visualization_msgs::MarkerArray* markarr_msg_out, const carplanner_msgs::MarkerArrayConfig& config = carplanner_msgs::MarkerArrayConfig())
+inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& patharr_msg, visualization_msgs::MarkerArray* markarr_msg_out, const carplanner_msgs::MarkerArrayConfig& config = carplanner_msgs::MarkerArrayConfig(), const Eigen::Vector3d offset = Eigen::Vector3d::Zero())
 {
     visualization_msgs::MarkerArray markarr_msg;
 
@@ -98,6 +98,9 @@ inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& pa
         for (unsigned iPose=0; iPose<markarr_msg.markers[iPath].points.size(); ++iPose)
         {
             markarr_msg.markers[iPath].points[iPose] = patharr_msg.paths[iPath].poses[iPose].pose.position;
+            markarr_msg.markers[iPath].points[iPose].x += offset[0];
+            markarr_msg.markers[iPath].points[iPose].y += offset[1];
+            markarr_msg.markers[iPath].points[iPose].z += offset[2];
         }
     }
 
@@ -106,6 +109,7 @@ inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& pa
 
 inline void convertSomePath2PathArrayMsg(std::list<std::vector<VehicleState> *>& path, carplanner_msgs::PathArray* patharr_msg_out, std::string frame_id="map")
 {
+    Sophus::SE3d rot_180_x(Eigen::Quaterniond(0,1,0,0),Eigen::Vector3d(0,0,0));
     carplanner_msgs::PathArray patharr_msg;
     patharr_msg.header.frame_id = frame_id;
     patharr_msg.header.stamp = ros::Time::now();
@@ -116,7 +120,9 @@ inline void convertSomePath2PathArrayMsg(std::list<std::vector<VehicleState> *>&
         path_msg.header.stamp = ros::Time::now();
         for(uint i_state=0; i_state < (*i_seg)->size(); i_state++)
         {
-            carplanner_msgs::VehicleState state_msg = (**i_seg)[i_state].FlipCoordFrame().toROS();
+            VehicleState state = (**i_seg)[i_state];
+            state.m_dTwv = rot_180_x * state.m_dTwv;
+            carplanner_msgs::VehicleState state_msg = state.toROS();
             geometry_msgs::PoseStamped pose_msg;
             pose_msg.header.frame_id = frame_id;
             pose_msg.header.stamp = ros::Time::now();
@@ -153,9 +159,9 @@ inline void convertSomePath2PathMsg(Eigen::Vector3dAlignedVec& path, nav_msgs::P
     {
         // carplanner_msgs::VehicleState state_msg = i_seg[i_state].FlipCoordFrame().toROS();
         
-        // tf::Transform rot_180_x(tf::Quaternion(1,0,0,0),tf::Vector3(0,0,0));
+        tf::Transform rot_180_x(tf::Quaternion(1,0,0,0),tf::Vector3(0,0,0));
         tf::Transform pose(tf::Quaternion(0,0,0,1),tf::Vector3((*i_seg)[0],(*i_seg)[1],(*i_seg)[2]));
-        // pose = rot_180_x * pose * rot_180_x;
+        pose = rot_180_x * pose;
 
         geometry_msgs::PoseStamped pose_msg;
         pose_msg.header.frame_id = frame_id;

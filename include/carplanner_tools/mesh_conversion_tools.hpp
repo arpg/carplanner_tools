@@ -439,7 +439,6 @@ inline void convertMeshMsg2CollisionShape_Shared(const mesh_msgs::TriangleMesh& 
     triangleIndices->at(i * 3 + 2) = meshMsg.triangles[i].vertex_indices[2];
   }
 
-
   btTriangleIndexVertexArray* triangleMesh = new btTriangleIndexVertexArray(meshMsg.triangles.size(), (int *)&triangleIndices->at(0), 3 * sizeof(int), meshMsg.vertices.size(), (btScalar *)&triangleVertices->at(0), sizeof(btVector3));
   collisionShape = new btBvhTriangleMeshShape(triangleMesh,true,true);
 

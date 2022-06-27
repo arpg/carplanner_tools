@@ -1,0 +1,47 @@
+axis_control_value: 1  # Left thumb stick vertical
+scale_control_value: 1.0
+scale_control_value_turbo: 2.0
+
+axis_steer: 3  # Right thumb stick horizontal
+scale_steer: -0.3
+scale_steer_turbo: -0.23
+
+enable_button: 4  # Left bumper button
+enable_turbo_button: 5  # Right bumper button
+
+add_waypoint_button: 0  # A button
+remove_waypoint_button: 1  # B button
+increase_speed_waypoint_button: 3 # Y button
+decrease_speed_waypoint_button: 2 # X button
+speed_delta: 0.5 # in meters/sec, when the increase/decrease_speed_waypoint_button
+                 # is pressed, it is changed by this amount
+nearby_waypoint_radius: 1.0 # in meters, when a button pertaining to a 
+                            # nearby waypoint is pressed, 
+                            # any waypoints within this distance of the vehicle's 
+                            # current position are effected.
+
+# BUTTONS
+# A button........ button 0
+# B button........ button 1
+# X button........ button 2
+# Y button........ button 3
+# left bumper..... button 4
+# right bumper.... button 5
+# select button... button 6
+# start button.... button 7
+# xbox button..... button 8
+# left stick...... button 9
+# right stick..... button 10
+# left D-pad...... button 11
+# right D-pad..... button 12
+# up D-pad........ button 13
+# down D-pad...... button 14
+# AXES
+# left stick horizontal.... axis 0
+# left stick vertical...... axis 1
+# left trigger............. axis 2
+# right stick horizontal... axis 3
+# right stick vertical..... axis 4
+# right trigger............ axis 5
+# D-pad horizontal......... axis 6
+# D-pad vertical........... axis 7
