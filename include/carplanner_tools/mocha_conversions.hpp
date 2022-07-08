@@ -56,6 +56,46 @@ inline void convertPathArrayMsg2PathMsg(carplanner_msgs::PathArray& patharr_msg,
     (*path_msg_out) = path_msg;
 }
 
+inline void convertPathMsg2LineStripMsg(nav_msgs::Path& path_msg, visualization_msgs::Marker* mark_msg_out, const carplanner_msgs::MarkerArrayConfig& config = carplanner_msgs::MarkerArrayConfig(), const Eigen::Vector3d offset = Eigen::Vector3d::Zero())
+{
+    visualization_msgs::Marker mark_msg;
+
+    mark_msg.header.frame_id = path_msg.header.frame_id;
+    mark_msg.header.stamp = path_msg.header.stamp;
+    mark_msg.ns = config.ns;
+    mark_msg.id = 0;
+    mark_msg.type = visualization_msgs::Marker::LINE_STRIP;
+    mark_msg.scale.x = config.scale_x;
+    mark_msg.color.r = config.color_r;
+    mark_msg.color.g = config.color_g;
+    mark_msg.color.b = config.color_b;
+    mark_msg.color.a = config.color_a;
+
+    mark_msg.pose.orientation.w = 1.f;
+
+    mark_msg.points.resize(path_msg.poses.size());
+
+    if (mark_msg.points.size() > 0)
+    {
+        mark_msg.action = visualization_msgs::Marker::ADD;
+    }
+    else
+    {
+        mark_msg.action = visualization_msgs::Marker::DELETE;
+        return;
+    }
+
+    for (unsigned iPose=0; iPose<mark_msg.points.size(); ++iPose)
+    {
+        mark_msg.points[iPose] = path_msg.poses[iPose].pose.position;
+        mark_msg.points[iPose].x += offset[0];
+        mark_msg.points[iPose].y += offset[1];
+        mark_msg.points[iPose].z += offset[2];
+    }
+
+    (*mark_msg_out) = mark_msg;
+}
+
 inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& patharr_msg, visualization_msgs::MarkerArray* markarr_msg_out, const carplanner_msgs::MarkerArrayConfig& config = carplanner_msgs::MarkerArrayConfig(), const Eigen::Vector3d offset = Eigen::Vector3d::Zero())
 {
     visualization_msgs::MarkerArray markarr_msg;
@@ -105,6 +145,35 @@ inline void convertPathArrayMsg2LineStripArrayMsg(carplanner_msgs::PathArray& pa
     }
 
     (*markarr_msg_out) = markarr_msg;
+}
+
+inline void convertSomePath2PathMsg(std::vector<VehicleState>& path, nav_msgs::Path* path_msg_out, std::string frame_id="map")
+{
+    Sophus::SE3d rot_180_x(Eigen::Quaterniond(0,1,0,0),Eigen::Vector3d(0,0,0));
+
+    nav_msgs::Path path_msg;
+    path_msg.header.frame_id = frame_id;
+    path_msg.header.stamp = ros::Time::now();
+    for(uint i_state=0; i_state < path.size(); i_state++)
+    {
+        VehicleState state = path[i_state];
+        state.m_dTwv = rot_180_x * state.m_dTwv;
+        carplanner_msgs::VehicleState state_msg = state.toROS();
+        geometry_msgs::PoseStamped pose_msg;
+        pose_msg.header.frame_id = frame_id;
+        pose_msg.header.stamp = ros::Time::now();
+        pose_msg.pose.position.x = state_msg.pose.transform.translation.x;
+        pose_msg.pose.position.y = state_msg.pose.transform.translation.y;
+        pose_msg.pose.position.z = state_msg.pose.transform.translation.z;
+        pose_msg.pose.orientation.x = state_msg.pose.transform.rotation.x;
+        pose_msg.pose.orientation.y = state_msg.pose.transform.rotation.y;
+        pose_msg.pose.orientation.z = state_msg.pose.transform.rotation.z;
+        pose_msg.pose.orientation.w = state_msg.pose.transform.rotation.w;
+
+        path_msg.poses.push_back(pose_msg);
+    }
+
+    (*path_msg_out) = path_msg;
 }
 
 inline void convertSomePath2PathArrayMsg(std::list<std::vector<VehicleState> *>& path, carplanner_msgs::PathArray* patharr_msg_out, std::string frame_id="map")
