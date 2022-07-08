@@ -1,0 +1,2 @@
+#!/bin/bash
+python2 plot_bag.py /media/mike/MIKEMDATA3/mocha/mocha_2022_06_27_aspen/2022-06-27-21-51-32.bag
