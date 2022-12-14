@@ -9,6 +9,7 @@ import matplotlib.animation as animation
 from numpy import average
 # from mpl_toolkits import mplot3d
 import rosbag
+import rospy
 from collections import OrderedDict as odict
 
 from tf_bag import BagTfTransformer
@@ -140,6 +141,15 @@ def GetTranslationDictFromBag(bag, topics_for_time, parent_id="map", child_id="b
         dict[time_s] = translation
     return dict
 
+def GetTranslationRangeDictFromBag(bag, time, parent_id="map", child_id="base_link"):
+    bag_transformer = BagTfTransformer(bag)
+    dict = odict()
+    for t in time:
+        stamp = rospy.Time(int(math.floor(t)),int(1e9*(t-math.floor(t))))
+        translation, quaternion = bag_transformer.lookupTransform(parent_id, child_id, stamp)
+        dict[t] = translation
+    return dict
+
 def GetPathAndTranslationDictFromBag(bag, parent_id="map", child_id="base_link"):
     bag_transformer = BagTfTransformer(bag)
     path_dict = odict()
@@ -162,7 +172,7 @@ def PlotPathDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, e
 
     time = DictTime(path_dict)
     path_msgs = DictValues(path_dict)
-    tran_msgs = DictValues(tran_dict)
+    tran_msgs = DictValues(path_dict)
 
     print('Found: '+str(len(path_msgs))+' path msgs from '+str(time[0])+' - '+str(time[-1])+' s.')
 
@@ -254,6 +264,8 @@ def PlotPathDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, e
     this_value = control_plan_freqs
     this_duration = duration[:-kernel_size]
     this_value = RollingAverage(control_plan_freqs,kernel_size)
+    print(this_duration)
+    print(this_value)
     plt.plot(this_duration,this_value,'k')
     plt.plot(this_duration,[0 for i in range(len(this_duration))],'k:')
     plt.xlabel('time (seconds)')
@@ -309,7 +321,7 @@ def PlotPathDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, e
 
     ## generate colormap for scatter plot of paths
     fig = plt.figure()
-    norm_cmmap = plt.scatter([start[0] for start in trans_sorted], [start[1] for start in trans_sorted], c=norms_sorted, cmap='RdYlGn_r')
+    norm_cmmap = plt.scatter([], [], c=norms_sorted, cmap='RdYlGn_r')
     plt.close(fig)
 
     ## scatter plot of trans, paths, and norms in x,y space
@@ -364,17 +376,23 @@ def PlotPathDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, e
     # writer = animation.FFMpegWriter(fps=15, metadata=dict(artist='Me'), bitrate=1800)
     # ani.save("movie.mp4", writer=writer)
 
-def PlotTfDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, extension='.png'):
-    print('Plotting tf data...')
+def PlotGlobalLocalizationDataFromBagFile(bagfile, experiment_id):
+    print('Plotting global localization data...')
 
+    save_fig = True
+    extension = '.png'
+    crop = True
     offset = (0,-2,0)
 
     bag = rosbag.Bag(bagfile)
-    tran_dict = GetTranslationDictFromBag(bag, '/cpu_stats_publisher/cpu_usage')
-    gtran_dict = GetTranslationDictFromBag(bag, '/cpu_stats_publisher/cpu_usage', 'map', 'base_link/vicon')
+    cpu_dict = GetCpuDictFromBag(bag)
+    cpu_time = DictTime(cpu_dict)
+    dtime = 1.0/100.0
+    time = [cpu_time[0]+i*dtime for i in range(int(round((cpu_time[-1]-cpu_time[0])/dtime)))]
+    tran_dict = GetTranslationRangeDictFromBag(bag, time, 'map', 'base_link')
+    gtran_dict = GetTranslationRangeDictFromBag(bag, time, 'map', 'base_link/vicon')
     bag.close()
 
-    time = DictTime(tran_dict)
     tran_msgs = DictValues(tran_dict)
     gtran_msgs = DictValues(gtran_dict)
 
@@ -383,17 +401,18 @@ def PlotTfDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, ext
     trans = [(tran_msgs[i][0]-offset[0], tran_msgs[i][1]-offset[1], tran_msgs[i][2]-offset[2]) for i in range(len(tran_msgs))]
     gtrans = [(gtran_msgs[i][0]-offset[0], gtran_msgs[i][1]-offset[1], gtran_msgs[i][2]-offset[2]) for i in range(len(tran_msgs))]
 
-    ## crop and sort starts/norms to relevant time window for scatter plotting
-    if crop:
-        # crop_index = [i for i in range(len(durations)) if durations[i]>255]
-        crop_index = [i for i in range(len(duration))]
-
-        time = [time[i] for i in crop_index]
-        trans = [trans[i] for i in crop_index]
-        gtrans = [trans[i] for i in crop_index]
-
     ## calculate derivative values
     duration = TimeToDuration(time)
+
+    ## crop and sort starts/norms to relevant time window for scatter plotting
+    if crop:
+        crop_index = [i for i in range(len(duration)) if duration[i]>35]
+        # crop_index = [i for i in range(len(duration))]
+
+        time = [time[i] for i in crop_index]
+        duration = [duration[i] for i in crop_index]
+        trans = [trans[i] for i in crop_index]
+        gtrans = [gtrans[i] for i in crop_index]
 
     dtime = [0]
     dtime.extend( [duration[i+1]-duration[i] for i in range(len(duration)-1)] ) 
@@ -433,18 +452,18 @@ def PlotTfDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, ext
 
     ## find rmse between odometry and ground truth
     near_path = []
-    rmse = [((trans[i][0]-gtrans[i][0])**2+(trans[i][1]-gtrans[i][1])**2)**0.5 for i in range(len(time))]
+    lrmse = [((trans[i][0]-gtrans[i][0])**2+(trans[i][1]-gtrans[i][1])**2)**0.5 for i in range(len(time))]
 
-    print('average rmse: '+str(np.average(rmse)))
+    print('average localization rmse: '+str(np.average(lrmse)))
 
     ## plot of rmse over duration
     fig = plt.figure()
-    plt.plot(duration,rmse,'k')
+    plt.plot(duration,lrmse,'k')
     plt.plot(duration,[0 for i in range(len(duration))],'k:')
     plt.xlabel('time (seconds)')
     plt.ylabel('RMSE (meters)')
     if save_fig:
-        plt.savefig('rmse_'+experiment_id+extension,bbox_inches='tight')
+        plt.savefig('localization-rmse_'+experiment_id+extension,bbox_inches='tight')
         plt.close(fig)
 
     ## plot odom and near_path elements over duration
@@ -462,8 +481,8 @@ def PlotTfDataFromBagFile(bagfile, experiment_id, crop=False, save_fig=True, ext
     ## scatter plot of trans, paths, and norms in x,y space
     fig = plt.figure()
     # ax = plt.axes(xlim=(,),ylim=(,))
-    plt.plot([odom[0] for odom in trans], [odom[1] for odom in trans], 'k:', zorder=90)
-    plt.plot([near_odom[0] for near_odom in gtrans], [near_odom[1] for near_odom in gtrans], 'k')
+    plt.plot([odom[0] for odom in trans], [odom[1] for odom in trans], 'k', zorder=90)
+    plt.plot([near_odom[0] for near_odom in gtrans], [near_odom[1] for near_odom in gtrans], 'k:')
     # wp_path_plot = plt.plot([wp_pt[0] for wp_pt in wp_path], [wp_pt[1] for wp_pt in wp_path], 'k', zorder=99)
     # wp_plot = plt.scatter([wp[0] for wp in wps], [wp[1] for wp in wps], c='k', zorder=100)
     plt.gca().invert_xaxis()
@@ -574,31 +593,27 @@ def main():
     if experiment_id == None:
         print('Error: Invalid experiment id provided.')
 
-    crop = False
-    save_fig = True
-    extension = '.png'
-
     print('Processing Experiment '+experiment_id+'...')
 
     # try:
-    PlotPathDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
+    #     PlotPathDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
     # except Exception as e:
     #     print('Could not plot path data -- '+str(e))
 
-    try:
-        PlotTfDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
-    except Exception as e:
-        print('Could not plot tf data -- '+str(e))
+    # try:
+    PlotGlobalLocalizationDataFromBagFile(bagfile, experiment_id)
+    # except Exception as e:
+    #     print('Could not plot global localization data -- '+str(e))
 
-    try:
-        PlotCpuDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
-    except Exception as e:
-        print('Could not cpu path data -- '+str(e))
+    # try:
+    #     PlotCpuDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
+    # except Exception as e:
+    #     print('Could not cpu path data -- '+str(e))
 
-    try:
-        PlotMapDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
-    except Exception as e:
-        print('Could not map path data -- '+str(e))
+    # try:
+    #     PlotMapDataFromBagFile(bagfile, experiment_id, crop, save_fig, extension)
+    # except Exception as e:
+    #     print('Could not map path data -- '+str(e))
 
     print('Done processing Experiment '+experiment_id+'.')
     return
