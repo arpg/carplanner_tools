@@ -1,0 +1,2 @@
+#!/bin/bash
+rosbag record /tf /tf_static /odom /odom_chassis /gui/ctrl_path /gui/waypoints /planner_command /joy_command /input_terrain_mesh /cpu_stats_publisher/cpu_usage
