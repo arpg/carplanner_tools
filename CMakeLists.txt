@@ -197,3 +197,10 @@ add_executable( joy_goal_generator
 target_link_libraries( joy_goal_generator
   ${catkin_LIBRARIES}
 )
+
+add_executable( cpu_stats_publisher
+  src/cpu_stats_publisher.cpp
+)
+target_link_libraries( cpu_stats_publisher
+  ${catkin_LIBRARIES}
+)
